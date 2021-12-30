@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -114,4 +116,57 @@ func Return(id string, session *Session) error {
 type Session struct {
 	URL    url.URL
 	Client http.Client
+}
+
+func Borrowed(session *Session) ([]map[string]interface{}, error) {
+	resp, err := session.Client.Get(session.URL.String() + "/Patron/Borrowed")
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	var body []map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&body)
+	if err != nil {
+		return nil, err
+	}
+
+	return body, nil
+}
+
+func Obii(id string, session *Session) (string, error) {
+	borrowed, err := Borrowed(session)
+	if err != nil {
+		return "", err
+	}
+	for _, s := range borrowed {
+		log.Println(s["Title"].(string) + ": " + s["Id"].(string) + ": " + s["Obii"].(string))
+		if s["Id"] == id {
+			return s["Obii"].(string), nil
+		}
+	}
+	return "", errors.New("book not borrowed")
+}
+
+func Download(id string, session *Session) (string, error) {
+	obii, err := Obii(id, session)
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := session.Client.Get(session.URL.String() + "/Reader/OfflineReading?localEpub&id=" + obii)
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	sb := string(body)
+
+	return sb, nil
 }

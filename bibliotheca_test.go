@@ -25,6 +25,11 @@ func Test(t *testing.T) {
 		log.Fatal(err)
 	}
 
+	borrowed, err := Borrowed(s)
+	log.Println(borrowed)
+	test, _ := Download(bookId, s)
+	log.Println(test)
+
 	//log.Println(item)
 	log.Println("Book: " + item["Title"].(string))
 	log.Println("ISBN: " + item["ISBN"].(string))
@@ -33,10 +38,10 @@ func Test(t *testing.T) {
 
 	if action == "Return" {
 		log.Println("Returning book...")
-		err = Return(bookId, s)
+		/*err = Return(bookId, s)
 		if err != nil {
 			log.Fatal(err)
-		}
+		}*/
 	} else if action == "Borrow" {
 		log.Println("Borrowing book...")
 		err = Borrow(bookId, s)
