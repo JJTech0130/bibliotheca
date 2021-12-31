@@ -2,17 +2,24 @@ package main
 
 import (
 	"log"
-	"net/url"
 	"testing"
 )
 
 func Test(t *testing.T) {
-	bookId := "ammqdg9"
-
-	baseURL, err := url.Parse("https://ebook.yourcloudlibrary.com/uisvc/BethlehemDistrictLibraries")
+	id, err := GetLibraryID(UnitedStates, "PA", "HELLERTOWN AREA LIBRARY")
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
+	lib, err := GetLibrary(UnitedStates, id)
+	if err != nil {
+		log.Fatal(err)
+	}
+	baseURL, err := GenerateURL(lib)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	bookId := "ammqdg9"
 
 	session, err := Login("11111", baseURL)
 	s := &session
