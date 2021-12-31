@@ -25,18 +25,18 @@ func Test(t *testing.T) {
 	log.Println("Book: " + b.Title)
 	log.Println("Author: " + b.Author)
 	log.Println("ISBN: " + b.ISBN)
-	log.Println("Action: " + b.Action)
+	log.Println("State: " + b.State)
 
-	if b.Action == Returnable {
+	if b.State == Borrowed {
 		log.Println("Downloading book...")
-		ascm, err := Download(bookId, s)
+		ascm, err := b.Download(s)
 		if err != nil {
 			log.Fatal(err)
 		}
 		log.Println(ascm)
-	} else if b.Action == Borrowable {
+	} else if b.State == Borrowable {
 		log.Println("Borrowing book...")
-		err = Borrow(bookId, s)
+		err = b.Borrow(s)
 		if err != nil {
 			log.Fatal(err)
 		}

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/cookiejar"
@@ -67,54 +66,6 @@ func item(id string, session *Session) (map[string]interface{}, error) {
 	return body, nil
 }
 
-// Borrow borrows the specified book from the library. The book must be available.
-func Borrow(id string, session *Session) error {
-	postBody, _ := json.Marshal(map[string]string{"CatalogItemId": id})
-
-	resp, err := session.Client.Post(session.URL.String()+"/Item/Borrow", "application/json", bytes.NewBuffer(postBody))
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
-
-	var body map[string]interface{}
-	err = json.NewDecoder(resp.Body).Decode(&body)
-	if err != nil {
-		return err
-	} else if body["ErrorCode"] != nil {
-		return errors.New(body["ErrorMessage"].(string))
-	} else if body["Result"] != true {
-		return errors.New(body["Message"].(string))
-	}
-
-	return nil
-}
-
-// Return returns the specified book to the library. The book must be borrowed.
-func Return(id string, session *Session) error {
-	postBody, _ := json.Marshal(map[string]string{"CatalogItemId": id})
-
-	resp, err := session.Client.Post(session.URL.String()+"/Item/Return", "application/json", bytes.NewBuffer(postBody))
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
-
-	var body map[string]interface{}
-	err = json.NewDecoder(resp.Body).Decode(&body)
-	if err != nil {
-		return err
-	} else if body["ErrorCode"] != nil {
-		return errors.New(body["ErrorMessage"].(string))
-	} else if body["Result"] != true {
-		return errors.New(body["Message"].(string))
-	}
-
-	return nil
-}
-
 // Session holds the URL to the library, as well as a Client containing the session cookie
 type Session struct {
 	URL    url.URL
@@ -153,27 +104,4 @@ func obii(id string, session *Session) (string, error) {
 		}
 	}
 	return "", errors.New("book must be borrowed, can't generate OBII")
-}
-
-// Download downloads an ASCM file for the specified book. It must be borrowed for this to work.
-func Download(id string, session *Session) (string, error) {
-	id, err := obii(id, session)
-	if err != nil {
-		return "", err
-	}
-
-	resp, err := session.Client.Get(session.URL.String() + "/Reader/OfflineReading?localEpub&id=" + id)
-	if err != nil {
-		return "", err
-	}
-
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	sb := string(body)
-
-	return sb, nil
 }
