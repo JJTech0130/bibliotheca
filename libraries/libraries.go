@@ -1,4 +1,4 @@
-package bibliotheca
+package libraries
 
 import (
 	"encoding/json"

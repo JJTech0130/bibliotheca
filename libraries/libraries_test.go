@@ -1,10 +1,10 @@
-package bibliotheca
+package libraries
 
 import (
 	"testing"
 )
 
-func TestLibraries(t *testing.T) {
+func Test(t *testing.T) {
 	baseURL, err := LibraryURL(UnitedStates, "PA", "BETHLEHEM AREA PUBLIC LIBRARY")
 	if err != nil {
 		t.Fatal(err)
