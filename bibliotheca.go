@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-// Login to the Bibliotheca cloudLibrary at the specified URL, with the specified userId
+// Login to the Bibliotheca cloudLibrary at the specified URL, with the specified userId.
 // Returns a Session for use with later requests
 func Login(userId string, baseURL *url.URL) (Session, error) {
 	jar, err := cookiejar.New(nil)
@@ -47,7 +47,8 @@ func Login(userId string, baseURL *url.URL) (Session, error) {
 	return Session{*baseURL, client}, nil
 }
 
-func GetItem(id string, session *Session) (map[string]interface{}, error) {
+// item gets a raw map of information on the specified item
+func item(id string, session *Session) (map[string]interface{}, error) {
 	resp, err := session.Client.Get(session.URL.String() + "/Item/GetItem?id=" + id)
 	if err != nil {
 		return nil, err
@@ -55,7 +56,6 @@ func GetItem(id string, session *Session) (map[string]interface{}, error) {
 
 	defer resp.Body.Close()
 
-	// This is terribly inefficient, should come up with a better way to handle errors
 	var body map[string]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&body)
 	if err != nil {
@@ -67,6 +67,7 @@ func GetItem(id string, session *Session) (map[string]interface{}, error) {
 	return body, nil
 }
 
+// Borrow borrows the specified book from the library. The book must be available.
 func Borrow(id string, session *Session) error {
 	postBody, _ := json.Marshal(map[string]string{"CatalogItemId": id})
 
@@ -90,6 +91,7 @@ func Borrow(id string, session *Session) error {
 	return nil
 }
 
+// Return returns the specified book to the library. The book must be borrowed.
 func Return(id string, session *Session) error {
 	postBody, _ := json.Marshal(map[string]string{"CatalogItemId": id})
 
@@ -113,12 +115,14 @@ func Return(id string, session *Session) error {
 	return nil
 }
 
+// Session holds the URL to the library, as well as a Client containing the session cookie
 type Session struct {
 	URL    url.URL
 	Client http.Client
 }
 
-func Borrowed(session *Session) ([]map[string]interface{}, error) {
+// borrowed gets a raw map of information on borrowed books
+func borrowed(session *Session) ([]map[string]interface{}, error) {
 	resp, err := session.Client.Get(session.URL.String() + "/Patron/Borrowed")
 	if err != nil {
 		return nil, err
@@ -135,8 +139,10 @@ func Borrowed(session *Session) ([]map[string]interface{}, error) {
 	return body, nil
 }
 
-func Obii(id string, session *Session) (string, error) {
-	borrowed, err := Borrowed(session)
+// obii gets the "OBII" for the specified book, necessary for downloading.
+// the book must be borrowed in order for this to work.
+func obii(id string, session *Session) (string, error) {
+	borrowed, err := borrowed(session)
 	if err != nil {
 		return "", err
 	}
@@ -146,16 +152,17 @@ func Obii(id string, session *Session) (string, error) {
 			return s["Obii"].(string), nil
 		}
 	}
-	return "", errors.New("book not borrowed")
+	return "", errors.New("book must be borrowed, can't generate OBII")
 }
 
+// Download downloads an ASCM file for the specified book. It must be borrowed for this to work.
 func Download(id string, session *Session) (string, error) {
-	obii, err := Obii(id, session)
+	id, err := obii(id, session)
 	if err != nil {
 		return "", err
 	}
 
-	resp, err := session.Client.Get(session.URL.String() + "/Reader/OfflineReading?localEpub&id=" + obii)
+	resp, err := session.Client.Get(session.URL.String() + "/Reader/OfflineReading?localEpub&id=" + id)
 	if err != nil {
 		return "", err
 	}
