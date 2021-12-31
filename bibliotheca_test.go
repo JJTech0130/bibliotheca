@@ -2,23 +2,13 @@ package bibliotheca
 
 import (
 	"log"
+	"net/url"
 	"testing"
 )
 
 func Test(t *testing.T) {
-	id, err := GetLibraryID(UnitedStates, "PA", "HELLERTOWN AREA LIBRARY")
-	if err != nil {
-		log.Fatal(err)
-	}
-	lib, err := GetLibrary(UnitedStates, id)
-	if err != nil {
-		log.Fatal(err)
-	}
-	baseURL, err := GenerateURL(lib)
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	baseURL, _ := url.Parse("https://ebook.yourcloudlibrary.com/uisvc/BethlehemDistrictLibraries")
+	
 	bookId := "ammqdg9"
 
 	session, err := Login("11111", baseURL)
