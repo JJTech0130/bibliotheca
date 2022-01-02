@@ -9,38 +9,39 @@ import (
 func Test(t *testing.T) {
 	baseURL, _ := url.Parse("https://ebook.yourcloudlibrary.com/uisvc/BethlehemDistrictLibraries")
 
-	bookId := "ammqdg9"
-
-	session, err := Login("11111", baseURL)
-	s := &session
+	patron, err := NewPatron("11111", baseURL)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
-	b, err := NewBook(bookId, s)
+	b, err := NewBook("ammqdg9", baseURL)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	log.Println("Book: " + b.Title)
 	log.Println("Author: " + b.Author)
 	log.Println("ISBN: " + b.ISBN)
-	log.Println("State: " + b.State)
 
-	if b.State == Borrowed {
+	allowed, err := patron.AllowedAction(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if allowed == Return { // If we can return it, it must be borrowed
 		log.Println("Downloading book...")
-		ascm, err := b.Download(s)
+		ascm, err := patron.Download(b)
 		if err != nil {
-			log.Fatal(err)
+			t.Fatal(err)
 		}
 		log.Println(ascm)
-	} else if b.State == Borrowable {
+	} else if allowed == Borrow {
 		log.Println("Borrowing book...")
-		err = b.Borrow(s)
+		err = patron.Borrow(b)
 		if err != nil {
-			log.Fatal(err)
+			t.Fatal(err)
 		}
 	} else {
-		log.Fatal("Book is in unknown state")
+		t.Fatal("Book is in unknown state: " + allowed)
 	}
 }
